@@ -1,0 +1,27 @@
+{
+  "name": "jQuery.selectList",
+  "title": "jQuery SelectList",
+  "description": "A jQuery plugin for replaces the standard HTML (multiple) select element.",
+  "version": "1.0.1",
+  "keywords": ["select", "jQuery select", "selectList"],
+  "homepage": "https://github.com/jiangzm/jQuery-selectList",
+  "author": {
+    "name": "Michael Jiang",
+    "email": "michaeljzm@gmail.com",
+    "url": "http://jiangzm.com"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jiangzm/jQuery-selectList.git"
+  },
+  "dependencies": {
+    "jquery": ">=1.7",
+	"jquery.mousewheel":">=1.2.2"
+  }
+}

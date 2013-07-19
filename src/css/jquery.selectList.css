@@ -1,0 +1,203 @@
+﻿.selectList{
+	min-width: 150px;
+    position: relative;
+    border: solid 1px #96b3db;
+    line-height: 1.5;
+    text-decoration: none;
+    text-align: left;
+    color: #000;
+    outline: none;
+    vertical-align: middle;
+    background: #F2F2F2;
+    background: -moz-linear-gradient(top, #F8F8F8 1%, #E1E1E1 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(1%, #F8F8F8), color-stop(100%, #E1E1E1));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#F8F8F8', endColorstr='#E1E1E1', GradientType=0);
+    -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+    -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    display: inline-block;
+    cursor: default;
+}
+
+.selectList .selectList-label {
+	padding: 2px 8px;
+	display: block;
+	white-space: nowrap;
+	overflow:hidden;
+	/*text-overflow:ellipsis;*/
+}
+
+.selectList .selectList-arrow {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 23px;
+	height: 100%;
+	background: url(../img/selectList-arrow.gif) 50% center no-repeat;
+	border-left: solid 1px #96b3db;
+}
+
+.selectList .selectList-disabled {
+	color: #888 !important;
+}
+
+.selectList .selectList-disabled .selectList-arrow {
+	opacity: .5;
+	filter: alpha(opacity=50);
+	border-color: #96b3db;
+}
+.clear{clear:both; height:0; line-height:0;font-size:0px;visibility:hidden;}
+.selectList-panel
+{
+    position:absolute;
+	z-index:1000;
+	visibility:hidden;
+	display:none;
+	top:-100px;
+	left:-100px;
+	min-width:220px;
+	border:1px solid #96b3db;
+	background-color:#FFF;
+	padding-left:5px; 
+	padding-right:5px;
+	box-shadow:0 0 40px #ccc;
+}
+.selectList-panel .selectTips
+{
+    position:absolute; 
+    font-size:30px;background:url("../img/selectTips.png") no-repeat;
+    width:26px; 
+    height:14px; 
+    overflow:hidden;
+    top:-14px;
+    left:0px;
+}
+.selectList-panel .selectHead
+{
+    border-bottom: 2px solid #87CAF7;
+    height: 40px;
+    line-height:40px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    /*height:auto !important; /*for ie6 bug and ie7+,moz,webkit 正确* /
+	height:100%; /*修复IE6,all browser* /
+	min-height:100%; /*for ie6 bug and ie7+,moz,webkit 正确*/
+}
+.selectHead span
+{
+    color: #666666;
+    font-size: 14px;
+    font-weight: bold;
+    padding-left: 5px;
+    /*padding-top: 15px;*/
+    padding-top:0;
+    margin-top:0;
+    -webkit-margin-before: 0em;
+    -webkit-margin-after: 0em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+	float:left;
+}
+.selectHead .selectButtons
+{
+    float:left;
+    color:#fff;
+    font-size:12px;
+}
+.selectHead a
+{
+    color:#ffffff;
+    font-size:12px;
+    text-decoration:none !important;
+    width:62px;
+    height:22px;
+    display:inline-block;
+    padding:0;
+    text-align:center;
+    line-height:22px;
+    _margin-top:3px; 
+    margin-left:5px;
+    cursor:default;
+}
+.selectHead .okButton
+{
+    background: url("../img/selectButtons.png") 0 -24px no-repeat;
+}
+.selectHead .allButton
+{
+    background: url("../img/selectButtons.png") 0 0 no-repeat;
+    color:#336699; 
+    margin-left:5px;
+}
+.selectHead .clearButton
+{
+    background: url("../img/selectButtons.png") 0 0 no-repeat;
+    color:#336699; 
+    margin-left:5px;
+}
+.selectHead .closeButton
+{
+    float: none;
+    position: absolute;
+    right: 0px;
+    top: 5px;
+    width:25px;
+    padding:4px;
+    background:url("../img/selectColse.gif") center no-repeat;
+}
+.selectHead .closeButton:hover
+{
+    background: url("../img/selectColsehover.gif") no-repeat scroll center center #87caf7;
+}
+.selectBody
+{
+    padding:10px 6px 10px 5px;
+}
+.selectBody input
+{
+    margin-right:5px;
+}
+.selectBody table,.selectBody table td{
+    padding:0;
+    border:0;
+    cursor:default;
+}
+.selectBody table td:hover{
+    background-color:#d2ecfe;
+}
+.selectBody table td
+{
+    width:auto !important;
+	width:100px;
+	min-width:100px;
+	height:20px;
+}
+.selected-item
+{
+    color:#ff7100;
+}
+.scrollWrapper
+{
+    width:2px;
+    height:100%;
+    background-color:#cbcbcb;
+    position:absolute;
+    top:0;
+    right:2px;
+}
+.scrollWrapper .scrollContent
+{
+    width:6px;
+    left:-2px;
+    background-color:orange;
+    cursor:pointer;
+    position:absolute;
+    border-radius:5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
