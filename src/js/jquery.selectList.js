@@ -11,7 +11,8 @@
 
 (function ($) {
     //初始化元素和下拉面板
-    function init(target, options) {
+    function init(options) {
+        var target = this;
         var opts = options;
         var t = $(target).prop("multiple", opts.multiple).hide();
         var select = $('<a class="selectList" />')
@@ -21,13 +22,17 @@
 			         .attr('tabindex', t.attr('tabindex') || -1)
 			         .css('display', 'inline-block')
                      .insertAfter(target)
-                     .mousedown(function (e) { e && e.stopPropagation(); })
-                     .on('click', null, function (e) {
-                         if (panel.is(':hidden')) {
-                             showPanel(target);
-                         }
-                         else {
-                             hidePanel(target);
+                     .on({
+                         'click': function (e) {
+                             if (panel.is(':hidden')) {
+                                 showPanel.call(target);
+                             }
+                             else {
+                                 hidePanel.call(target);
+                             }
+                         },
+                         "mousedown": function (e) {
+                             e && e.stopPropagation();
                          }
                      });
 
@@ -45,7 +50,7 @@
                         'mouseleave': function () {
                             $(document).off('mousedown.selectlist')
                                        .one('mousedown.selectlist', function () {
-                                           hidePanel(target);
+                                           hidePanel.call(target);
                                        });
                         }
                     });
@@ -53,14 +58,14 @@
         var pHead = $('<div class="selectHead"><span>' + opts.title + '</span></div>').appendTo(panel);
         var pHeadButtons = $('<div class="selectButtons"></div>').appendTo(pHead);
         $('<a class="okButton" >确定</a>').appendTo(pHeadButtons).click(function () {
-            hidePanel(target);
+            hidePanel.call(target);
             var panel = $.data(target, 'selectlist').panel;
             var indexes = panel.find(".selectlist-td>input").map(function (i, item) {
                 if ($(item).prop("checked")) {
                     return i;
                 }
             }).get();
-            setIndexes(target, indexes);
+            setIndexes.call(target, indexes);
         });
         if (opts.multiple) {
             $('<a class="allButton">' + (opts.selectAll ? '清除' : '全选') + '</a>').appendTo(pHeadButtons).click(function () {
@@ -89,7 +94,7 @@
             });
         }
         $('<a class="closeButton"></a>').appendTo(pHeadButtons).click(function () {
-            hidePanel(target);
+            hidePanel.call(target);
         });
         pHead.append('<div class="clear"></div>');
         panel.append('<div class="selectBody"><table class="selectItems" border="0" cellSpacing="0" cellPadding="0" width="100%"></table></div>');
@@ -110,7 +115,8 @@
     };
 
     //选中下拉列表的选项
-    function setIndexes(target, indexes) {
+    function setIndexes(indexes) {
+        var target = this;
         var panel = $.data(target, "selectlist").panel;
         var opts = $.data(target, 'selectlist').options;
         var data = $.data(target, 'selectlist').data;
@@ -121,7 +127,7 @@
         if (!indexes || indexes.length == 0) {
             $(target).data("indexes", []);
             $(target).val(opts.multiple ? [] : null);
-            setText(target, "-请选择-");
+            setText.call(target, "-请选择-");
             if (oldIndexes.length) {
                 opts.onChange.call(target, []);
             }
@@ -143,7 +149,7 @@
 
         $(target).data("indexes", indexes);
         $(target).val(opts.multiple ? vv : vv[0]);
-        setText(target, ss.join(opts.separator || ',') || "-请选择-");
+        setText.call(target, ss.join(opts.separator || ',') || "-请选择-");
 
         oldIndexes && (function () {
             if (oldIndexes.length != indexes.length) {
@@ -161,7 +167,8 @@
     };
 
     //设置目标元素的值
-    function setValues(target, values) {
+    function setValues(values) {
+        var target = this;
         var data = $.data(target, 'selectlist').data;
         var opts = $.data(target, 'selectlist').options;
 
@@ -175,26 +182,30 @@
                 return i;
             }
         });
-        setIndexes(target, indexes);
+        setIndexes.call(target, indexes);
     };
 
     //获取目标元素的值
-    function getValues(target) {
-        var indexes = $.data(target, "indexes");
-        var panel = $.data(target, 'selectlist').panel;
+    function getValues() {
+        var indexes = $.data(this, "indexes");
+        var panel = $.data(this, 'selectlist').panel;
         return $.map(indexes, function (item, i) {
             return panel.find("input").eq(item).val();
         });
     };
 
     //设置元素的显示文本
-    function setText(target, text) {
-        var select = $.data(target, "selectlist").select;
-        select.find('.selectList-label').text(text).attr("title", text);
+    function setText(text) {
+        var select = $.data(this, "selectlist").select;
+        select.find('.selectList-label')
+              .attr("title", text)
+              .text(text);
     };
 
     //为元素载入选择项
-    function loadData(target, data) {
+    function loadData(data) {
+        var target = this;
+        var buildSelect = arguments.length == 1 || arguments[1];
         var opts = $.data(target, 'selectlist').options;
         var panel = $.data(target, "selectlist").panel;
         $.data(target, 'selectlist').data = data;
@@ -219,7 +230,9 @@
                     else {
                         tr.append('<td class="selectlist-td"><input type="radio" name="selectRadio-' + target.name + '" value=' + v + ' />' + s + '</td>');
                     }
-                    $target.append("<option value='" + v + "' >" + s + "</option>");
+                    if (buildSelect) {
+                        $target.append("<option value='" + v + "' >" + s + "</option>");
+                    }
 
                     if (opts.selectAll || (opts.selectIndex == i + j) ||
                         (opts.selectValue == v) || data[i + j]['selected']) {
@@ -229,7 +242,7 @@
             }
             i += j - 1;
         }
-        setIndexes(target, indexes);
+        setIndexes.call(target, indexes);
         opts.onSuccess.call(target, data);
 
         panel.find('.selectlist-td').click(function () {
@@ -256,7 +269,8 @@
     };
 
     //以ajax远程请求元素的数据
-    function request(target, url, param) {
+    function request(url, param) {
+        var target = this;
         var opts = $.data(target, 'selectlist').options;
         if (url) {
             opts.url = url;
@@ -271,7 +285,7 @@
             dataType: 'json',
             data: param,
             success: function (data) {
-                loadData(target, data);
+                loadData.call(target, data);
             },
             error: function () {
                 opts.loadError.apply(this, arguments);
@@ -280,7 +294,8 @@
     };
 
     //显示下拉面板
-    function showPanel(target) {
+    function showPanel() {
+        var target = this;
         var panel = $.data(target, "selectlist").panel;
         var select = $.data(target, "selectlist").select;
         var opts = $.data(target, "selectlist").options;
@@ -333,8 +348,8 @@
     };
 
     //隐藏下拉面板
-    function hidePanel(target) {
-        var panel = $.data(target, "selectlist").panel;
+    function hidePanel() {
+        var panel = $.data(this, "selectlist").panel;
         panel.hide();
     };
 
@@ -351,11 +366,11 @@
     /**
      * 解析options，包括元素节点'data-options'属性
      * 
-     * parseOptions(target);
-     * parseOptions(target, ['id','width',{fit:'boolean',min:'number'}]);
+     * parseOptions();
+     * parseOptions(['id','width',{fit:'boolean',min:'number'}]);
      */
-    function parseOptions(target, properties) {
-        var t = $(target);
+    function parseOptions(props) {
+        var t = $(this);
         var options = {};
 
         var s = $.trim(t.attr('data-options'));
@@ -367,20 +382,20 @@
             options = (new Function('return ' + s))();
         }
 
-        if (properties) {
+        if (props) {
             var opts = {};
-            for (var i = 0; i < properties.length; i++) {
-                var pp = properties[i];
-                if (typeof pp == 'string') {
-                    if (pp == 'width' || pp == 'height' || pp == 'left' || pp == 'top') {
-                        opts[pp] = parseInt(target.style[pp]) || undefined;
+            for (var i = 0; i < props.length; i++) {
+                var p = props[i];
+                if (typeof p == 'string') {
+                    if (p == 'width' || p == 'height' || p == 'left' || p == 'top') {
+                        opts[p] = parseInt(t.css[p]) || undefined;
                     } else {
-                        opts[pp] = t.attr(pp);
+                        opts[p] = t.attr(p);
                     }
                 }
                 else {
-                    for (var name in pp) {
-                        var type = pp[name];
+                    for (var name in p) {
+                        var type = p[name];
                         if (type == 'boolean') {
                             opts[name] = t.attr(name) ? (t.attr(name) == 'true') : undefined;
                         } else if (type == 'number') {
@@ -415,7 +430,7 @@
             }
             else {
                 var opts = $.extend({}, $.fn.selectList.defaults, $.fn.selectList.parseOptions(this), options);
-                var r = init(this, opts);
+                var r = init.call(this, opts);
                 //if (opts.columns > 3) opts.columns = 3;
                 if (opts.selectValue && !(typeof opts.selectValue == 'string' || typeof opts.selectValue == 'number')) {
                     opts.selectValue = null;
@@ -425,13 +440,13 @@
                     select: r.select,
                     panel: r.panel
                 });
-                loadData(this, $.fn.selectList.parseData(this));
+                loadData.call(this, $.fn.selectList.parseData(this), false);
                 $(this).prop('disabled', false);
             }
             if (state.options.data) {
-                loadData(this, state.options.data);
+                loadData.call(this, state.options.data);
             }
-            request(this);
+            request.call(this);
         });
     };
 
@@ -463,30 +478,30 @@
         },
         setValue: function (jq, values) {
             return jq.each(function () {
-                setValues(this, values);
+                setValues.call(this, values);
             });
         },
         getValue: function (jq) {
-            return getValues(jq[0]);
+            return getValues.call(jq[0]);
         },
         loadData: function (jq, data) {
             return jq.each(function () {
-                loadData(this, data);
+                loadData.call(this, data);
             });
         },
         reload: function (jq, url) {
             return jq.each(function () {
-                request(this, url);
+                request.call(this, url);
             });
         },
         showPanel: function (jq) {
             return jq.each(function () {
-                showPanel(this);
+                showPanel.call(this);
             });
         },
         hidePanel: function (jq) {
             return jq.each(function () {
-                hidePanel(this);
+                hidePanel.call(this);
             });
         }
     };
@@ -570,7 +585,8 @@
             _self.wrapperObj = _self.jqObj.parent();     //内容对象容器对象
             _self.wrapperObjHeight = _self.wrapperObj.outerHeight(); //容器对象的高度
             _self.jqObjHeight = _self.jqObj.outerHeight()
-                              + (_self.wrapperObjHeight - _self.wrapperObj.height()); //内容对象的高度
+                              + _self.wrapperObjHeight
+                              - _self.wrapperObj.height(); //内容对象的高度
             if (_self.wrapperObj.css('overflow') !== 'hidden') {
                 _self.wrapperObj.css('overflow', "hidden").addClass('scrollOverFlow');
             }
@@ -631,7 +647,7 @@
                 _self.setScroll(currentTopValue);
                 e.preventDefault();
                 /*if (currentTopValue > 0 && currentTopValue < _self.maxValue) {
-                e.preventDefault();
+                    e.preventDefault();
                 }*/
             });
             if (options.hoverHideScroll) {
@@ -696,12 +712,12 @@
                 ua = ua.toLowerCase();
 
                 var match = /(chrome)[ \/]([\w.]+)/.exec(ua) ||
-		                    /(webkit)[ \/]([\w.]+)/.exec(ua) ||
-		                    /(opera)(?:.*version|)[ \/]([\w.]+)/.exec(ua) ||
-		                    /(msie) ([\w.]+)/.exec(ua) ||
+                            /(webkit)[ \/]([\w.]+)/.exec(ua) ||
+                            /(opera)(?:.*version|)[ \/]([\w.]+)/.exec(ua) ||
+                            /(msie) ([\w.]+)/.exec(ua) ||
                             ua.indexOf("trident") > 0 && /(rv) ([\w.]+)/.exec(ua) ||
-		                    ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec(ua) ||
-		                    [];
+                            ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec(ua) ||
+                            [];
 
                 return {
                     browser: match[1] || "",
