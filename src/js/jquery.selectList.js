@@ -17,10 +17,10 @@
         var t = $(target).hide();
         var select = $('<a class="selectList" />')
                      .width(t.outerWidth())
-			         .addClass(t.attr('class'))
-			         .attr('title', t.attr('title') || '')
-			         .attr('tabindex', t.attr('tabindex') || -1)
-			         .css('display', 'inline-block')
+                     .addClass(t.attr('class'))
+                     .attr('title', t.attr('title') || '')
+                     .attr('tabindex', t.attr('tabindex') || -1)
+                     .css('display', 'inline-block')
                      .insertAfter(target)
                      .on({
                          'click': function (e) {
@@ -557,7 +557,7 @@
      * selectList 参数的默认值
      */
     $.fn.selectList.defaults = {
-        title: "请选择",      //下拉面板标题
+        title: "请选择",     //下拉面板标题
         columns: 1,          //选择项的列数
         size: 6,             //下拉列表高度
         multiple: true,      //是否多选
