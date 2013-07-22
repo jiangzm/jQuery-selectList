@@ -14,7 +14,7 @@
     function init(options) {
         var target = this;
         var opts = options;
-        var t = $(target).prop("multiple", opts.multiple).hide();
+        var t = $(target).hide();
         var select = $('<a class="selectList" />')
                      .width(t.outerWidth())
 			         .addClass(t.attr('class'))
@@ -31,7 +31,7 @@
                                  hidePanel.call(target);
                              }
                          },
-                         "mousedown": function (e) {
+                         'mousedown': function (e) {
                              e && e.stopPropagation();
                          }
                      });
@@ -49,22 +49,29 @@
                         },
                         'mouseleave': function () {
                             $(document).off('mousedown.selectlist')
-                                       .one('mousedown.selectlist', function () {
-                                           hidePanel.call(target);
+                                       .one('mousedown.selectlist', function (e) {
+                                           if (e.which == 1) {
+                                               hidePanel.call(target);
+                                           }
+                                           else {
+                                               hidePanel.call(target, 0);
+                                           }
                                        });
                         }
                     });
         panel.append('<div class="selectTips"></div>');
         var pHead = $('<div class="selectHead"><span>' + opts.title + '</span></div>').appendTo(panel);
         var pHeadButtons = $('<div class="selectButtons"></div>').appendTo(pHead);
+
         $('<a class="okButton" >确定</a>').appendTo(pHeadButtons).click(function () {
-            hidePanel.call(target);
             var panel = $.data(target, 'selectlist').panel;
-            var indexes = panel.find(".selectlist-td>input").map(function (i, item) {
-                if ($(item).prop("checked")) {
-                    return i;
-                }
-            }).get();
+            var indexes = panel.find(".selectlist-td>input")
+                               .map(function (i, item) {
+                                   if ($(item).prop("checked")) {
+                                       return i;
+                                   }
+                               }).get();
+            hidePanel.call(target);
             setIndexes.call(target, indexes);
         });
         if (opts.multiple) {
@@ -99,8 +106,29 @@
         pHead.append('<div class="clear"></div>');
         panel.append('<div class="selectBody"><table class="selectItems" border="0" cellSpacing="0" cellPadding="0" width="100%"></table></div>');
 
+        panel.delegate('td.selectlist-td', 'click', function () {
+            if (opts.multiple) {
+                $(this).toggleClass('selected-item');
+                $('input', this).prop('checked', !$('input', this).prop('checked'));
+            }
+            else {
+                panel('.selected-item').removeClass('selected-item');
+                $(this).addClass('selected-item');
+                $('input', this).prop('checked', true);
+            }
+        });
+        panel.delegate('td.selectlist-td>input', 'click', function (e) {
+            if (opts.multiple) {
+                $(this).parent().toggleClass('selected-item');
+            }
+            else {
+                panel.find('.selected-item').removeClass('selected-item');
+                $(this).parent().addClass('selected-item');
+            }
+            e.stopPropagation();
+        });
         $(window).on('resize.selectlist', null, function () {
-            if (panel.is(':hidden')) {
+            if (!panel.is(':hidden')) {
                 panel.css({
                     'top': select.offset().top + select.outerHeight() + 2,
                     'left': select.offset().left
@@ -112,58 +140,6 @@
             select: select,
             panel: panel
         };
-    };
-
-    //选中下拉列表的选项
-    function setIndexes(indexes) {
-        var target = this;
-        var panel = $.data(target, "selectlist").panel;
-        var opts = $.data(target, 'selectlist').options;
-        var data = $.data(target, 'selectlist').data;
-        var oldIndexes = $.data(target, 'indexes');
-        panel.find('.selected-item').removeClass('selected-item');
-        panel.find(':checked').prop('checked', false);
-
-        if (!indexes || indexes.length == 0) {
-            $(target).data("indexes", []);
-            $(target).val(opts.multiple ? [] : null);
-            setText.call(target, "-请选择-");
-            if (oldIndexes.length) {
-                opts.onChange.call(target, []);
-            }
-            return;
-        }
-        if (!opts.multiple && indexes.length > 1) {
-            indexes = [indexes[indexes.length - 1]];
-        }
-
-        var vv = [], ss = [];
-        panel.find(".selectlist-td>input").each(function (i, item) {
-            if ($.inArray(i, indexes) != -1) {
-                $(this).prop("checked", true)
-                       .parent().addClass('selected-item');
-                vv.push(data[i][opts.valueField]);
-                ss.push(data[i][opts.textField]);
-            }
-        });
-
-        $(target).data("indexes", indexes);
-        $(target).val(opts.multiple ? vv : vv[0]);
-        setText.call(target, ss.join(opts.separator || ',') || "-请选择-");
-
-        oldIndexes && (function () {
-            if (oldIndexes.length != indexes.length) {
-                opts.onChange.call(target, vv);
-            }
-            else {
-                for (var i in indexes) {
-                    if ($.inArray(indexes[i], oldIndexes) != -1) {
-                        opts.onChange.call(target, vv);
-                        break;
-                    }
-                }
-            }
-        })();
     };
 
     //设置目标元素的值
@@ -202,19 +178,81 @@
               .text(text);
     };
 
+    //选中下拉列表的选项
+    function setIndexes(indexes) {
+        var target = this;
+        var panel = $.data(target, "selectlist").panel;
+        var opts = $.data(target, 'selectlist').options;
+        var data = $.data(target, 'selectlist').data;
+        var oldIndexes = $.data(target, 'indexes');
+        panel.find('.selected-item').removeClass('selected-item');
+        panel.find(':checked').prop('checked', false);
+
+        if (!indexes || indexes.length == 0) {
+            $(target).data("indexes", []);
+            $(target).val(opts.multiple ? [] : null);
+            setText.call(target, "-请选择-");
+            if (oldIndexes && oldIndexes.length) {
+                opts.onChange.call(target, []);
+            }
+            return;
+        }
+        if (!opts.multiple && indexes.length > 1) {
+            indexes = [indexes[indexes.length - 1]];
+        }
+
+        var vv = [], ss = [];
+        panel.find(".selectlist-td>input").each(function (i, item) {
+            if ($.inArray(i, indexes) != -1) {
+                $(this).prop("checked", true)
+                       .parent().addClass('selected-item');
+                vv.push(data[i][opts.valueField]);
+                ss.push(data[i][opts.textField]);
+            }
+        });
+
+        $(target).data("indexes", indexes);
+        $(target).val(opts.multiple ? vv : vv[0]);
+        setText.call(target, ss.join(opts.separator) || "-请选择-");
+
+        oldIndexes && (function () {
+            if (oldIndexes.length != indexes.length) {
+                opts.onChange.call(target, vv);
+            }
+            else {
+                for (var i in indexes) {
+                    if ($.inArray(indexes[i], oldIndexes) != -1) {
+                        opts.onChange.call(target, vv);
+                        break;
+                    }
+                }
+            }
+        })();
+    };
+
     //为元素载入选择项
     function loadData(data) {
         var target = this;
         var buildSelect = arguments.length == 1 || arguments[1];
         var opts = $.data(target, 'selectlist').options;
         var panel = $.data(target, "selectlist").panel;
+        var select = $.data(target, "selectlist").select;
         $.data(target, 'selectlist').data = data;
         $.data(target, 'scroll', null);
         $.data(target, 'indexes', null);
 
+        var $target = $(target).empty().prop({
+            "multiple": opts.multiple,
+            "disabled": opts.disabled
+        });
+        if (opts.disabled) {
+            select.addClass('select-disabled');
+        }
+        else {
+            select.removeClass('select-disabled');
+        }
         var indexes = [];
         var items = panel.find(".selectItems").empty();
-        var $target = $(target).empty();
         for (var i = 0, j; i < data.length; i++) {
             var tr = $('<tr></tr>').appendTo(items);
             for (j = 0; j < opts.columns; j++) {
@@ -242,30 +280,8 @@
             }
             i += j - 1;
         }
-        setIndexes.call(target, indexes);
+        setIndexes.call(target, (opts.selectIndex === -1) ? [] : indexes);
         opts.onSuccess.call(target, data);
-
-        panel.find('.selectlist-td').click(function () {
-            if (opts.multiple) {
-                $(this).toggleClass('selected-item');
-                $('input', this).prop('checked', !$('input', this).prop('checked'));
-            }
-            else {
-                panel('.selected-item').removeClass('selected-item');
-                $(this).addClass('selected-item');
-                $('input', this).prop('checked', true);
-            }
-        });
-        panel.find('.selectlist-td>input').click(function (e) {
-            if (opts.multiple) {
-                $(this).parent().toggleClass('selected-item');
-            }
-            else {
-                panel.find('.selected-item').removeClass('selected-item');
-                $(this).parent().addClass('selected-item');
-            }
-            e.stopPropagation();
-        });
     };
 
     //以ajax远程请求元素的数据
@@ -299,20 +315,20 @@
         var panel = $.data(target, "selectlist").panel;
         var select = $.data(target, "selectlist").select;
         var opts = $.data(target, "selectlist").options;
+        if (opts.disabled) return;
         panel.find(">.selectTips").css('left', select.outerWidth() / 2 - 26);
         panel.find(".selectBody").css({ "max-height": opts.size * 20 });
         panel.css({
             'z-index': opts.zindex,
-            'visibility': 'visible',
             'top': select.offset().top + select.outerHeight() + 2,
             'left': select.offset().left
-        }).show();
+        }).show(400);
         panel.find('.selected-item').removeClass('selected-item');
         panel.find(':checked').prop('checked', false);
         //for ie 6/7
         if ($.browser && $.browser.msie && ($.browser.version - 0) < 8) {
             panel.find(".selectButtons").css("padding-top", "9px");
-            panel.css("width", opts.columns <= 2 ? "220px" : (20 + opts.columns * 100) + "px");
+            panel.width(opts.columns <= 2 ? 220 : (20 + opts.columns * 100));
         }
 
         $.each($.data(target, "indexes"), function (i, item) {
@@ -321,10 +337,10 @@
                  .parent().addClass('selected-item');
         });
         var tw = panel.find('.selectHead span').width() - 45;
-        if (tw > 0 && panel.width() <= parseInt(panel.css('min-width').replace('px', ''))) {
+        if (tw > 0 && panel.width() <= parseInt(panel.css('min-width'))) {
             panel.width(panel.width() + tw);
         }
-
+        
         opts.multiple && (function () {
             var data = $.data(target, "selectlist").data;
             if (data.length == panel.find(":checked").length) {
@@ -348,9 +364,9 @@
     };
 
     //隐藏下拉面板
-    function hidePanel() {
+    function hidePanel(speed) {
         var panel = $.data(this, "selectlist").panel;
-        panel.hide();
+        panel.hide(speed === 0 ? 0 : 400);
     };
 
     //替换jQuery selector需要转义字符[':','.','/','$','[',']']
@@ -441,7 +457,6 @@
                     panel: r.panel
                 });
                 loadData.call(this, $.fn.selectList.parseData(this), false);
-                $(this).prop('disabled', false);
             }
             if (state.options.data) {
                 loadData.call(this, state.options.data);
@@ -454,10 +469,10 @@
      * selectList插件公开的方法
      * @options   获取元素的参数项         object
      * @panel     获取元素的下拉面板       jQuery
-     * @select    获取自定义的select      jQuery
+     * @select    获取自定义的select       jQuery
      * @getData   获取所有选择项数据       array
      * @getValue  获取元素的选择值         array
-     * @setValue  设置元素的值            (values:array|string|number)
+     * @setValue  设置元素的值             (values:array|string|number)
      * @loadData  重新设置选择项数据       (data:array)
      * @reload    以Url方式载入选择项数据  (url:string,params:object)
      * @showPanel 显示下拉面板
@@ -566,9 +581,9 @@
     /**
      * 自定义滚动条，依赖jQuery.mousewheel
      */
-    var ScrollBar = function (target, options) {
+    var ScrollBar = function (element, options) {
         if (arguments.length == 0) return;
-        return new ScrollBar.prototype.init(target, options);
+        return new ScrollBar.prototype.init(element, options);
     };
     ScrollBar.prototype = {
         /**
@@ -577,51 +592,55 @@
         constructor: ScrollBar,
         /**
          * 初始化滚动条
-         * @return {*}
+         * @return void
          */
-        init: function (target, options) {
+        init: function (element, options) {
             var _self = this;
-            _self.jqObj = $(target); //内容对象
-            _self.wrapperObj = _self.jqObj.parent();     //内容对象容器对象
-            _self.wrapperObjHeight = _self.wrapperObj.outerHeight(); //容器对象的高度
-            _self.jqObjHeight = _self.jqObj.outerHeight()
-                              + _self.wrapperObjHeight
-                              - _self.wrapperObj.height(); //内容对象的高度
-            if (_self.wrapperObj.css('overflow') !== 'hidden') {
-                _self.wrapperObj.css('overflow', "hidden").addClass('scrollOverFlow');
+            _self.$content = $(element); //内容对象
+            _self.$wrapper = _self.$content.parent(); //内容对象容器对象
+            _self.wrapperHeight = _self.$wrapper.outerHeight(); //容器对象的高度
+            _self.contentHeight = _self.$content.outerHeight()
+                                + _self.wrapperHeight
+                                - _self.$wrapper.height(); //内容对象的高度
+            //若内容对象高度小于容器对象高度则返回
+            if (_self.wrapperHeight >= _self.contentHeight) {
+                return;
             }
-            if (_self.wrapperObjHeight >= _self.jqObjHeight) {
-                //若内容对象高度小于容器对象高度则返回
-                return false;
-            }
-            _self.scrollHeight = _self.wrapperObjHeight * _self.wrapperObjHeight / _self.jqObjHeight; //滚动条的高度
-            _self.maxValue = _self.wrapperObjHeight - _self.scrollHeight; //滚动条最大的可滚动高度
+            _self.$wrapper.addClass('scrollOverFlow')
+                          .css({ 'overflow': "hidden", 'position': 'relative' })
+                          .append('<div class="scrollWrapper"><div class="scrollContent"></div></div>');
+            //滚动条的高度
+            _self.scrollHeight = _self.wrapperHeight * _self.wrapperHeight / _self.contentHeight;
+            //滚动条最大的可滚动高度
+            _self.maxRollHeight = _self.wrapperHeight - _self.scrollHeight;
+            _self.$wrapper.find("div.scrollContent").height(_self.scrollHeight);
+
             $.extend(_self.options, options);
-            _self.makeScroll(); //生成滚动条
-            _self.initEvent(); //初始化事件
+            _self.bindEvent(); //初始化事件
         },
         /**
-         * 初始化事件
-         * @return {*}
+         * 绑定事件
+         * @return void
          */
-        initEvent: function () {
+        bindEvent: function () {
             var _self = this;
             var mouseDown = false; //记录鼠标是否按下
             var startPageY = 0;    //记录鼠标按下时e.pageY的值
             var startTop = 0;      //记录鼠标按下时滚动条的top值
             var options = _self.options;
-            _self.scrollObj.on({
+            _self.$wrapper.find('div.scrollContent').on({
                 'mousedown': function (e) {
                     mouseDown = true;
                     startPageY = e.pageY;
                     startTop = $(this).position().top;
                     $(document).on({
-                        'mouseup.selectList': function (e) {
+                        'mouseup.selectlist': function (e) {
                             mouseDown = false;
-                            _self.scrollWrapperObj.stop(true, true).fadeOut();
-                            $(document).off('mouseup.selectList mousemove.selectList');
+                            _self.$wrapper.find('div.scrollWrapper')
+                                          .stop(true, true).fadeOut();
+                            $(document).off('mouseup.selectlist mousemove.selectlist selectstart.selectlist');
                         },
-                        'mousemove.selectList': function (e) {
+                        'mousemove.selectlist': function (e) {
                             if (mouseDown) {
                                 var curPageY = e.pageY;
                                 var moveY = curPageY - startPageY;
@@ -630,62 +649,56 @@
                                 }
                             }
                             e.preventDefault();
+                        },
+                        'selectstart.selectlist': function (e) {
+                            e.preventDefault();
                         }
                     });
                 }
             });
             //滚轮事件
-            _self.wrapperObj.mousewheel(function (e, delta) {
-                var currentTopValue = _self.scrollObj.position().top;
+            _self.$wrapper.mousewheel(function (e, delta) {
+                var currentTopValue = _self.$wrapper.find('div.scrollContent').position().top;
                 if (delta > 0) {
-                    //向上
-                    currentTopValue -= options.mouseWheelSpace;
+                    currentTopValue -= options.mouseWheelSpace; //向上
                 } else {
-                    //向下
-                    currentTopValue += options.mouseWheelSpace;
+                    currentTopValue += options.mouseWheelSpace; //向下
                 }
                 _self.setScroll(currentTopValue);
                 e.preventDefault();
-                /*if (currentTopValue > 0 && currentTopValue < _self.maxValue) {
+                /*if (currentTopValue > 0 && currentTopValue < _self.maxRollHeight) {
                     e.preventDefault();
                 }*/
             });
             if (options.hoverHideScroll) {
-                _self.wrapperObj.on({
-                    "mouseenter": function () {
-                        _self.scrollWrapperObj.stop(true, true).fadeIn();
+                _self.$wrapper.on({
+                    'mouseenter': function () {
+                        _self.$wrapper.find('div.scrollWrapper').stop(true, true).fadeIn();
                     },
-                    "mouseleave": function () {
+                    'mouseleave': function () {
                         if (!mouseDown) {
-                            _self.scrollWrapperObj.stop(true, true).fadeOut();
+                            _self.$wrapper.find('div.scrollWrapper').stop(true, true).fadeOut();
                         }
+                    },
+                    'mouseup': function (e) {
+                        mouseDown = false;
+                        e.stopPropagation();
                     }
                 });
             }
         },
         /**
-         * 生成滚动条函数
-         * @return {*}
-         */
-        makeScroll: function () {
-            var _self = this;
-            _self.wrapperObj.css('position', 'relative');
-            _self.wrapperObj.append('<div class="scrollWrapper"><div class="scrollContent" style="height: ' + _self.scrollHeight + 'px"></div></div>');
-            _self.scrollWrapperObj = _self.wrapperObj.find('.scrollWrapper');
-            _self.scrollObj = _self.scrollWrapperObj.find('.scrollContent');
-        },
-        /**
-         * 设置滚动条的top值和内容对象jqObj的marginTop值
+         * 设置滚动条的top值和内容对象$content的marginTop值
          * @param value 需要设置的滚动条的top值
-         * @return {*}
+         * @return void
          */
         setScroll: function (value) {
             var _self = this;
-            value = Math.min(Math.max(value, 0), _self.maxValue);
-            var marginTopValue = (_self.jqObjHeight / _self.wrapperObjHeight * value); //按比例计算内容对象的marginTop值
-            _self.scrollObj.css({ top: value });
-            _self.jqObj.css({ marginTop: -marginTopValue });
-            return _self;
+            value = Math.min(Math.max(value, 0), _self.maxRollHeight);
+            //按比例计算内容对象的marginTop值
+            var marginTopValue = _self.contentHeight / _self.wrapperHeight * value; 
+            _self.$wrapper.find('div.scrollContent').css({ top: value });
+            _self.$content.css({ marginTop: -marginTopValue });
         },
         /**
          * 默认值
@@ -699,7 +712,7 @@
     ScrollBar.prototype.init.prototype = ScrollBar.prototype;
     //#endregion
 
-    //#region 检测浏览器
+    //#region 检测浏览器和事件绑定
     (function (_) {
         //若jQuery≥1.9 则jQuery.browser Api已被移除
         if (!_.browser) {
@@ -748,6 +761,19 @@
             }
 
             _.browser = browser;
+        }
+
+        //for jquery version lt 1.7
+        if (!_.fn.on || !_.fn.off) {
+            $.fn.extend({
+                'on': _.fn.bind,
+                'off': _.fn.unbind
+            });
+        }
+
+        //for jquery version lt 1.6
+        if (!_.fn.prop) {
+            $.fn.prop = $.fn.attr;
         }
     })($);
     //#endregion

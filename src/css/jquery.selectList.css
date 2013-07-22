@@ -54,7 +54,7 @@
 {
     position:absolute;
 	z-index:1000;
-	visibility:hidden;
+	/*visibility:hidden;*/
 	display:none;
 	top:-100px;
 	left:-100px;
@@ -180,6 +180,11 @@
 {
     color:#ff7100;
 }
+.select-disabled
+{
+     cursor:not-allowed;
+     color:#ccc;
+}
 .scrollWrapper
 {
     width:2px;
@@ -189,7 +194,7 @@
     top:0;
     right:2px;
 }
-.scrollWrapper .scrollContent
+.scrollWrapper>.scrollContent
 {
     width:6px;
     left:-2px;
@@ -200,4 +205,7 @@
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
 }
-
+.scrollWrapper>.scrollContent:active
+{
+    cursor:ns-resize;
+}
