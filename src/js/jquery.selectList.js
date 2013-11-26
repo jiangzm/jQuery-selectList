@@ -1,7 +1,7 @@
 ﻿/**
  * @name     jQuery.selectList
- * @version  1.0.1
- * @date     2013.7
+ * @version  1.0.2
+ * @date     2013.11
  * @author   Jiangzm
  * @url      https://github.com/jiangzm/jQuery-selectList
  *
@@ -16,12 +16,18 @@
         var opts = options;
         var t = $(target).hide();
         var select = $('<a class="selectList" />')
-                     .width(t.outerWidth())
-                     .addClass(t.attr('class'))
-                     .attr('title', t.attr('title') || '')
-                     .attr('tabindex', t.attr('tabindex') || -1)
-                     .css('display', 'inline-block')
                      .insertAfter(target)
+                     .css({
+                         'width': t.outerWidth(),
+                         'height': t.outerHeight(),
+                         'font-size': t.css('font-size'),
+                         'line-height': t.outerHeight() + "px"
+                     })
+                     .attr({
+                         'title': t.attr('title') || '',
+                         'tabindex': t.attr('tabindex') || -1,
+                         'class': t.attr('class')
+                     })
                      .on({
                          'click': function (e) {
                              if (panel.is(':hidden')) {
@@ -35,7 +41,6 @@
                              e && e.stopPropagation();
                          }
                      });
-
         var label = $('<span class="selectList-label" />').appendTo(select);
         var arrow = $('<span class="selectList-arrow">&nbsp;</span>').appendTo(select);
         label.width(select.width() - arrow.outerWidth()
@@ -63,7 +68,7 @@
         var pHead = $('<div class="selectHead"><span>' + opts.title + '</span></div>').appendTo(panel);
         var pHeadButtons = $('<div class="selectButtons"></div>').appendTo(pHead);
 
-        $('<a class="okButton" >确定</a>').appendTo(pHeadButtons).click(function () {
+        $('<a class="okButton" >' + opts.okText + '</a>').appendTo(pHeadButtons).click(function () {
             var panel = $.data(target, 'selectlist').panel;
             var indexes = panel.find(".selectlist-td>input")
                                .map(function (i, item) {
@@ -75,25 +80,25 @@
             setIndexes.call(target, indexes);
         });
         if (opts.multiple) {
-            $('<a class="allButton">' + (opts.selectAll ? '清除' : '全选') + '</a>').appendTo(pHeadButtons).click(function () {
+            $('<a class="allButton">' + (opts.selectAll ? opts.clearText : opts.allText) + '</a>').appendTo(pHeadButtons).click(function () {
                 var panel = $.data(target, 'selectlist').panel;
                 var opts = $.data(target, 'selectlist').options;
                 if (opts.selectAll) {
                     panel.find(':checked').prop('checked', false);
                     panel.find('.selected-item').removeClass('selected-item');
-                    $(this).text("全选");
+                    $(this).text(opts.allText);
                     opts.selectAll = false;
                 }
                 else {
                     panel.find(':checkbox').prop('checked', true);
                     panel.find('.selectlist-td').addClass('selected-item');
-                    $(this).text("清除");
+                    $(this).text(opts.clearText);
                     opts.selectAll = true;
                 }
             });
         }
         else {
-            $('<a class="allButton">清除</a>').appendTo(pHeadButtons).click(function () {
+            $('<a class="allButton">' + opts.clearText + '</a>').appendTo(pHeadButtons).click(function () {
                 var panel = $.data(target, 'selectlist').panel;
 
                 panel.find(':checked').prop('checked', false);
@@ -112,7 +117,7 @@
                 $('input', this).prop('checked', !$('input', this).prop('checked'));
             }
             else {
-                panel('.selected-item').removeClass('selected-item');
+                panel.find('.selected-item').removeClass('selected-item');
                 $(this).addClass('selected-item');
                 $('input', this).prop('checked', true);
             }
@@ -231,9 +236,9 @@
     };
 
     //为元素载入选择项
-    function loadData(data) {
+    function loadData(data, isbuild) {
         var target = this;
-        var buildSelect = arguments.length == 1 || arguments[1];
+        var buildSelect = arguments.length == 1 || isbuild;
         var opts = $.data(target, 'selectlist').options;
         var panel = $.data(target, "selectlist").panel;
         var select = $.data(target, "selectlist").select;
@@ -316,20 +321,19 @@
         var select = $.data(target, "selectlist").select;
         var opts = $.data(target, "selectlist").options;
         if (opts.disabled) return;
+        //for ie 6/7
+        if ($.browser && $.browser.msie && ($.browser.version - 0) < 8) {
+            panel.width(opts.columns <= 2 ? 220 : (20 + opts.columns * 100));
+        }
         panel.find(">.selectTips").css('left', select.outerWidth() / 2 - 26);
         panel.find(".selectBody").css({ "max-height": opts.size * 20 });
+        panel.find('.selected-item').removeClass('selected-item');
+        panel.find(':checked').prop('checked', false);
         panel.css({
             'z-index': opts.zindex,
             'top': select.offset().top + select.outerHeight() + 2,
             'left': select.offset().left
         }).show(400);
-        panel.find('.selected-item').removeClass('selected-item');
-        panel.find(':checked').prop('checked', false);
-        //for ie 6/7
-        if ($.browser && $.browser.msie && ($.browser.version - 0) < 8) {
-            panel.find(".selectButtons").css("padding-top", "9px");
-            panel.width(opts.columns <= 2 ? 220 : (20 + opts.columns * 100));
-        }
 
         $.each($.data(target, "indexes"), function (i, item) {
             panel.find(".selectlist-td>input")
@@ -340,7 +344,7 @@
         if (tw > 0 && panel.width() <= parseInt(panel.css('min-width'))) {
             panel.width(panel.width() + tw);
         }
-        
+
         opts.multiple && (function () {
             var data = $.data(target, "selectlist").data;
             if (data.length == panel.find(":checked").length) {
@@ -381,7 +385,6 @@
 
     /**
      * 解析options，包括元素节点'data-options'属性
-     * 
      * parseOptions();
      * parseOptions(['id','width',{fit:'boolean',min:'number'}]);
      */
@@ -526,7 +529,8 @@
      */
     $.fn.selectList.parseOptions = function (target) {
         var t = $(target);
-        return $.extend({}, {
+        var s = $.trim(t.attr('data-options'));
+        var options = {
             title: t.attr('title'),
             columns: (t.attr('columns') - 0) || undefined,
             valueField: t.attr('valueField'),
@@ -534,7 +538,15 @@
             disabled: t.prop('disabled'),
             method: t.attr('method') || undefined,
             url: t.attr('url') || undefined
-        });
+        };
+        if (s) {
+            var first = s.substring(0, 1);
+            var last = s.substring(s.length - 1, 1);
+            if (first != '{') s = '{' + s;
+            if (last != '}') s = s + '}';
+            $.extend(options, (new Function('return ' + s))());
+        }
+        return options;
     };
 
     /**
@@ -558,6 +570,9 @@
      */
     $.fn.selectList.defaults = {
         title: "请选择",     //下拉面板标题
+        okText: "确定",      //确定按钮文本
+        clearText: "清除",   //清除按钮文本
+        allText: "全选",     //全选按钮文本
         columns: 1,          //选择项的列数
         size: 6,             //下拉列表高度
         multiple: true,      //是否多选
@@ -586,14 +601,9 @@
         return new ScrollBar.prototype.init(element, options);
     };
     ScrollBar.prototype = {
-        /**
-         * 构造函数
-         */
+        //构造函数
         constructor: ScrollBar,
-        /**
-         * 初始化滚动条
-         * @return void
-         */
+        //初始化滚动条
         init: function (element, options) {
             var _self = this;
             _self.$content = $(element); //内容对象
@@ -618,10 +628,7 @@
             $.extend(_self.options, options);
             _self.bindEvent(); //初始化事件
         },
-        /**
-         * 绑定事件
-         * @return void
-         */
+        //绑定事件
         bindEvent: function () {
             var _self = this;
             var mouseDown = false; //记录鼠标是否按下
@@ -667,7 +674,7 @@
                 _self.setScroll(currentTopValue);
                 e.preventDefault();
                 /*if (currentTopValue > 0 && currentTopValue < _self.maxRollHeight) {
-                    e.preventDefault();
+                e.preventDefault();
                 }*/
             });
             if (options.hoverHideScroll) {
@@ -696,13 +703,11 @@
             var _self = this;
             value = Math.min(Math.max(value, 0), _self.maxRollHeight);
             //按比例计算内容对象的marginTop值
-            var marginTopValue = _self.contentHeight / _self.wrapperHeight * value; 
+            var marginTopValue = _self.contentHeight / _self.wrapperHeight * value;
             _self.$wrapper.find('div.scrollContent').css({ top: value });
             _self.$content.css({ marginTop: -marginTopValue });
         },
-        /**
-         * 默认值
-         */
+        //默认值
         options: {
             speed: 1,              //鼠标移动多长步长触发鼠标移动事件
             mouseWheelSpace: 10,   //鼠标滚轮时滚动条移动的步长
@@ -777,4 +782,117 @@
         }
     })($);
     //#endregion
+
+    //#region 默认初始化
+    $(document).ready(function () {
+        $("select.selectList").selectList();
+    });
+    //#endregion
+
+})(jQuery);
+
+/*! Copyright (c) 2013 Brandon Aaron (http://brandonaaron.net)
+ * Licensed under the MIT License (LICENSE.txt).
+ *
+ * Thanks to: http://adomas.org/javascript-mouse-wheel/ for some pointers.
+ * Thanks to: Mathias Bank(http://www.mathias-bank.de) for a scope bug fix.
+ * Thanks to: Seamus Leahy for adding deltaX and deltaY
+ *
+ * Version: 3.1.3
+ *
+ * Requires: 1.2.2+
+ */
+$.fn.mousewheel || (function ($) {
+
+    var toFix = ['wheel', 'mousewheel', 'DOMMouseScroll', 'MozMousePixelScroll'];
+    var toBind = 'onwheel' in document || document.documentMode >= 9 ? ['wheel'] : ['mousewheel', 'DomMouseScroll', 'MozMousePixelScroll'];
+    var lowestDelta, lowestDeltaXY;
+
+    if ($.event.fixHooks) {
+        for (var i = toFix.length; i;) {
+            $.event.fixHooks[toFix[--i]] = $.event.mouseHooks;
+        }
+    }
+
+    $.event.special.mousewheel = {
+        setup: function () {
+            if (this.addEventListener) {
+                for (var i = toBind.length; i;) {
+                    this.addEventListener(toBind[--i], handler, false);
+                }
+            } else {
+                this.onmousewheel = handler;
+            }
+        },
+
+        teardown: function () {
+            if (this.removeEventListener) {
+                for (var i = toBind.length; i;) {
+                    this.removeEventListener(toBind[--i], handler, false);
+                }
+            } else {
+                this.onmousewheel = null;
+            }
+        }
+    };
+
+    $.fn.extend({
+        mousewheel: function (fn) {
+            return fn ? this.bind("mousewheel", fn) : this.trigger("mousewheel");
+        },
+
+        unmousewheel: function (fn) {
+            return this.unbind("mousewheel", fn);
+        }
+    });
+
+
+    function handler(event) {
+        var orgEvent = event || window.event,
+            args = [].slice.call(arguments, 1),
+            delta = 0,
+            deltaX = 0,
+            deltaY = 0,
+            absDelta = 0,
+            absDeltaXY = 0,
+            fn;
+        event = $.event.fix(orgEvent);
+        event.type = "mousewheel";
+
+        // Old school scrollwheel delta
+        if (orgEvent.wheelDelta) { delta = orgEvent.wheelDelta; }
+        if (orgEvent.detail) { delta = orgEvent.detail * -1; }
+
+        // New school wheel delta (wheel event)
+        if (orgEvent.deltaY) {
+            deltaY = orgEvent.deltaY * -1;
+            delta = deltaY;
+        }
+        if (orgEvent.deltaX) {
+            deltaX = orgEvent.deltaX;
+            delta = deltaX * -1;
+        }
+
+        // Webkit
+        if (orgEvent.wheelDeltaY !== undefined) { deltaY = orgEvent.wheelDeltaY; }
+        if (orgEvent.wheelDeltaX !== undefined) { deltaX = orgEvent.wheelDeltaX * -1; }
+
+        // Look for lowest delta to normalize the delta values
+        absDelta = Math.abs(delta);
+        if (!lowestDelta || absDelta < lowestDelta) { lowestDelta = absDelta; }
+        absDeltaXY = Math.max(Math.abs(deltaY), Math.abs(deltaX));
+        if (!lowestDeltaXY || absDeltaXY < lowestDeltaXY) { lowestDeltaXY = absDeltaXY; }
+
+        // Get a whole value for the deltas
+        fn = delta > 0 ? 'floor' : 'ceil';
+        delta = Math[fn](delta / lowestDelta);
+        deltaX = Math[fn](deltaX / lowestDeltaXY);
+        deltaY = Math[fn](deltaY / lowestDeltaXY);
+
+        // Add event and delta to the front of the arguments
+        args.unshift(event, delta, deltaX, deltaY);
+
+        return ($.event.dispatch || $.event.handle).apply(this, args);
+    }
+
 })(jQuery);
