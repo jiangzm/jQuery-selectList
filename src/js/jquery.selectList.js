@@ -14,9 +14,14 @@
     function init(options) {
         var target = this;
         var opts = options;
-        var t = $(target).hide();
+        var t = $(target).hide().prop({
+            "multiple": opts.multiple,
+            "disabled": opts.disabled
+        });
         var select = $('<a class="selectList" />')
                      .insertAfter(target)
+                     .addClass(t.attr('class') + (opts.disabled
+                               ? " select-disabled" : ""))
                      .css({
                          'width': t.outerWidth(),
                          'height': t.outerHeight(),
@@ -25,8 +30,7 @@
                      })
                      .attr({
                          'title': t.attr('title') || '',
-                         'tabindex': t.attr('tabindex') || -1,
-                         'class': t.attr('class')
+                         'tabindex': t.attr('tabindex') || -1
                      })
                      .on({
                          'click': function (e) {
@@ -41,6 +45,7 @@
                              e && e.stopPropagation();
                          }
                      });
+
         var label = $('<span class="selectList-label" />').appendTo(select);
         var arrow = $('<span class="selectList-arrow">&nbsp;</span>').appendTo(select);
         label.width(select.width() - arrow.outerWidth()
@@ -238,7 +243,6 @@
     //为元素载入选择项
     function loadData(data, isbuild) {
         var target = this;
-        var buildSelect = arguments.length == 1 || isbuild;
         var opts = $.data(target, 'selectlist').options;
         var panel = $.data(target, "selectlist").panel;
         var select = $.data(target, "selectlist").select;
@@ -246,18 +250,9 @@
         $.data(target, 'scroll', null);
         $.data(target, 'indexes', null);
 
-        var $target = $(target).empty().prop({
-            "multiple": opts.multiple,
-            "disabled": opts.disabled
-        });
-        if (opts.disabled) {
-            select.addClass('select-disabled');
-        }
-        else {
-            select.removeClass('select-disabled');
-        }
         var indexes = [];
         var items = panel.find(".selectItems").empty();
+        if (!isbuild) { $(target).empty(); }
         for (var i = 0, j; i < data.length; i++) {
             var tr = $('<tr></tr>').appendTo(items);
             for (j = 0; j < opts.columns; j++) {
@@ -273,8 +268,9 @@
                     else {
                         tr.append('<td class="selectlist-td"><input type="radio" name="selectRadio-' + target.name + '" value=' + v + ' />' + s + '</td>');
                     }
-                    if (buildSelect) {
-                        $target.append("<option value='" + v + "' >" + s + "</option>");
+                    if (!isbuild)
+                    {
+                        target.options.add(new Option(s, v));
                     }
 
                     if (opts.selectAll || (opts.selectIndex == i + j) ||
@@ -321,8 +317,9 @@
         var select = $.data(target, "selectlist").select;
         var opts = $.data(target, "selectlist").options;
         if (opts.disabled) return;
-        //for ie 6/7
-        if ($.browser && $.browser.msie && ($.browser.version - 0) < 8) {
+        //for ie 6/7 9
+        if ($.browser && $.browser.msie &&
+            $.browser.version - 0 < 8 || $.browser.version - 0 == 9) {
             panel.width(opts.columns <= 2 ? 220 : (20 + opts.columns * 100));
         }
         panel.find(">.selectTips").css('left', select.outerWidth() / 2 - 26);
@@ -459,7 +456,7 @@
                     select: r.select,
                     panel: r.panel
                 });
-                loadData.call(this, $.fn.selectList.parseData(this), false);
+                loadData.call(this, $.fn.selectList.parseData(this), true);
             }
             if (state.options.data) {
                 loadData.call(this, state.options.data);
@@ -570,7 +567,7 @@
      */
     $.fn.selectList.defaults = {
         title: "请选择",                 //下拉面板标题
-        emptyText: "-请选择-",           //选择空文本
+        emptyText: "-请选择-",           //默认文本
         okText: "确定",                  //确定按钮文本
         clearText: "清除",               //清除按钮文本
         allText: "全选",                 //全选按钮文本
